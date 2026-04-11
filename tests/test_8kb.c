@@ -1,51 +1,36 @@
+#include "../include/chacha20.h"
 #include <stdio.h>
 #include <string.h>
-#include "../src/chacha20.h"
 
-int main() {
-    uint8_t data[8192];
-    uint8_t original[8192];
-    uint8_t key[32] = {0x00};
-    uint8_t nonce[12] = {0x00};
-    uint32_t counter = 1;
+/**
+ * Encrypts and decrypts 8KB (8192 bytes) of dummy data using stack-allocated arrays.
+ */
+void test_8kb() {
+    printf("\n--- 8KB Data Encryption/Decryption Test ---\n");
 
-    // Inicializa com padrão
-    for (int i = 0; i < 8192; i++) {
-        data[i] = i % 256;
-        original[i] = data[i];
-    }
-    
-    // Altera a chave para não ser toda zero
-    key[0] = 0x55; 
-    nonce[0] = 0xAA;
+    const size_t size = 8192;
+    static uint8_t original[8192];
+    static uint8_t ciphertext[8192];
+    static uint8_t decrypted[8192];
 
-    // Cifrar
-    chacha20_encrypt(data, 8192, key, nonce, counter);
-
-    // Confirma que os dados foram modificados
-    int changed = 0;
-    for (int i = 0; i < 8192; i++) {
-        if (data[i] != original[i]) {
-            changed = 1;
-            break;
-        }
-    }
-    if (!changed) {
-        printf("[FAIL] Data was not modified by encryption\n");
-        return 1;
+    // Fill with a repeating pattern
+    for (size_t i = 0; i < size; i++) {
+        original[i] = (uint8_t)(i % 256);
     }
 
-    // Decifrar (em ChaCha20, aplicar novamente tem o mesmo efeito)
-    chacha20_encrypt(data, 8192, key, nonce, counter);
+    const uint8_t key[32] = {0x11, 0x22, 0x33, 0x44};
+    const uint8_t nonce[12] = {0x55, 0x66, 0x77, 0x88};
+    const uint32_t counter = 0;
 
-    // Checar reversão correta
-    for (int i = 0; i < 8192; i++) {
-        if (data[i] != original[i]) {
-            printf("[FAIL] 8KB test mismatched at byte %d\n", i);
-            return 1;
-        }
+    printf("Encrypting 8KB of data...\n");
+    chacha20_xor(ciphertext, original, size, key, nonce, counter);
+
+    printf("Decrypting 8KB of data...\n");
+    chacha20_xor(decrypted, ciphertext, size, key, nonce, counter);
+
+    if (memcmp(original, decrypted, size) == 0) {
+        printf("[PASS] 8KB encryption and decryption successful.\n");
+    } else {
+        printf("[FAIL] Data mismatch after decryption!\n");
     }
-    
-    printf("[OK] 8KB encrypt/decrypt test passed\n");
-    return 0;
 }

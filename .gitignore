@@ -1,10 +1,2 @@
 # Binários compilados
-tests/test_rfc
-tests/test_8kb
-bench/bench_chacha20
-
-# Arquivos objeto (caso existam no futuro)
-*.o
-
-# macOS
-.DS_Store
+/bin
